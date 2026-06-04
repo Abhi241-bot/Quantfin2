@@ -14,6 +14,7 @@ Date: 2026-06-04/05  |  Repo: https://github.com/Abhi241-bot/Quantfin2 (branch `
 | F — Delta-hedging simulation | `src/delta_hedging.py` | ✅ done, pushed |
 | Data acquisition | `src/fetch_data.py` | ✅ done, pushed |
 | README | `README.md` | ✅ done |
+| Narrative notebook | `notebooks/analysis.ipynb` | ✅ done, executed (5 figures, 0 errors), pushed |
 
 Plots in `results/`: `method_convergence.png`, `mc_convergence.png`, `vol_smile.png`,
 `vol_surface_3d.png`, `hedging_error.png`. IV table in `data/implied_vols.csv`.
@@ -59,16 +60,14 @@ rules). Two genuine bugs were caught and fixed mid-build (see §3).
 
 ## 4. Where to pick up next session
 
-**The core build is DONE.** Remaining items, in priority order:
+**All spec deliverables are DONE** (six modules + data + README + executed notebook). Remaining
+items are optional enhancements, in priority order:
 
-1. **`notebooks/analysis.ipynb`** (spec deliverable, not yet built) — the narrative notebook
-   stitching the story: pricing agreement → real chain → smile → hedging. This is the main
-   outstanding deliverable. Start here. (NotebookEdit tool, or jupytext.)
-2. **Optional stretch goals** (spec §8), any of which would strengthen a 2nd-year resume:
+1. **Optional stretch goals** (spec §8), any of which would strengthen a 2nd-year resume:
    - Calibrate **Heston** or a **local-vol** model and compare its smile to the SPY market smile.
    - **Greeks surface** — plot delta/gamma across strike × time.
    - **Implied vs realized vol** over time (the variance risk premium).
-3. **Optional polish:** add a `tests/` folder formalising the self-test asserts (currently the
+2. **Optional polish:** add a `tests/` folder formalising the self-test asserts (currently the
    `__main__` blocks act as runnable checks); pin the SPY snapshot date in the README.
 
 **Nothing is broken.** Every module runs clean and is pushed to `origin/main` (latest commit
