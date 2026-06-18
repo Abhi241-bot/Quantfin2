@@ -15,6 +15,46 @@ OTM calls — the market pricing crash risk). Simulated delta hedging and showed
 standard deviation shrinks as **1/√n** with rebalancing frequency, demonstrating that the BS price
 is the **cost of replication**, not a forecast.
 
+## Key results
+
+**Three-way pricing agreement** (S=100, K=100, T=1y, r=5%, σ=20%, q=0) — the correctness proof:
+
+| Option | Black-Scholes | CRR tree (N=2000) | Monte Carlo (1M paths, antithetic) |
+|--------|--------------:|------------------:|-----------------------------------:|
+| Call   | 10.4506       | 10.4496           | 10.4365 (BS inside 95% CI)         |
+| Put    | 5.5735        | 5.5725            | 5.5645 (BS inside 95% CI)          |
+
+Supporting checks: put-call parity abs error `0.00e+00`; analytic vs finite-difference Greeks match
+to 6 dp; tree→BS error `1e-3` at N=2000; American-put early-exercise premium `+0.518`; American
+call = European call at q=0; round-trip implied-vol recovery to `5e-10`; antithetic variates cut MC
+std by ~30%.
+
+**Empirical skew** (real SPY chain, spot ≈ 757.7, snapshot 2026-06-04; r=4.3%, q=1.2%):
+
+| Expiry (~days) | ATM IV | OTM-put IV (~0.95) | OTM-call IV (~1.05) | Put−call skew |
+|---------------:|-------:|-------------------:|--------------------:|--------------:|
+| 7              | 10.6%  | 18.6%              | 9.1%                | **+9.56%**    |
+| 28             | 12.3%  | 17.8%              | 10.2%               | **+7.60%**    |
+| 57             | 14.0%  | 18.0%              | 11.9%               | **+6.11%**    |
+| 88             | 15.2%  | 18.2%              | 13.1%               | **+5.11%**    |
+
+Downward skew at every expiry (OTM puts richer — crash-risk pricing), steepening at the short end;
+upward-sloping ATM term structure (calm-market contango).
+
+**Delta-hedging error** (short ATM call, path drift μ=0.10 ≠ r=0.05, 40k paths, frictionless):
+
+| Rebalances n | 1 | 2 | 5 | 10 | 21 | 50 | 100 | 252 |
+|--------------|--:|--:|--:|---:|---:|---:|----:|----:|
+| Mean error   | −0.19 | −0.11 | −0.04 | 0.00 | −0.02 | 0.00 | −0.01 | 0.00 |
+| Std error    | 6.12 | 4.42 | 2.87 | 2.06 | 1.45 | 0.94 | 0.68 | 0.43 |
+
+Mean ≈ 0 confirms drift-independent replication; `std·√n` stays ≈ 6.1–6.8 (the 1/√n law,
+Boyle-Emanuel). With 5 bps costs, mean P&L turns negative and worsens with frequency (−0.14 at n=5
+→ −0.31 at n=252) — the discretization-vs-cost tradeoff.
+
+> Empirical numbers are tied to the saved SPY snapshot (2026-06-04). Re-running `src/fetch_data.py`
+> refreshes the chain and will shift them to the new market date.
+
 ## Pricing engine
 
 - **Black-Scholes + full Greeks** (`src/black_scholes.py`) — delta, gamma, vega, theta, rho, all
@@ -27,6 +67,10 @@ is the **cost of replication**, not a forecast.
   cost).
 - **Three-way agreement table** — the unit test. BS / tree / MC land on the same call and put
   prices, with BS inside the MC 95% confidence interval.
+
+| Tree → Black-Scholes | Monte Carlo error ~ 1/√N |
+|:--:|:--:|
+| ![tree convergence](results/method_convergence.png) | ![mc convergence](results/mc_convergence.png) |
 
 ## Empirical volatility study
 
@@ -48,6 +92,10 @@ is the **cost of replication**, not a forecast.
 - **Framing:** the smile *is the evidence Black-Scholes is wrong* — the market corrects BS's flat-
   vol / normal-returns assumption. We do not claim BS "predicts" the prices.
 
+| Volatility smile / skew | 3D implied-vol surface |
+|:--:|:--:|
+| ![vol smile](results/vol_smile.png) | ![vol surface](results/vol_surface_3d.png) |
+
 ## Delta-hedging experiment
 
 - Sell one ATM call at its BS price, then delta-hedge to expiry along simulated GBM paths,
@@ -58,6 +106,8 @@ is the **cost of replication**, not a forecast.
 - **Transaction costs** (5 bps per trade) push mean P&L negative and grow with rebalancing — the
   real-world tension between discretization error and trading cost.
 - **Interpretation:** the BS price is the cost of the replicating portfolio, not a market forecast.
+
+![hedging error](results/hedging_error.png)
 
 ## Repo structure
 
@@ -75,6 +125,8 @@ is the **cost of replication**, not a forecast.
 │   ├── vol_surface.py        # Module E
 │   ├── delta_hedging.py      # Module F
 │   └── fetch_data.py         # SPY chain downloader
+├── notebooks/
+│   └── analysis.ipynb        # narrative: pricing agreement -> smile -> hedging (executed)
 └── results/
     ├── method_convergence.png   # tree -> BS
     ├── mc_convergence.png       # MC error ~ 1/sqrt(N)
@@ -109,4 +161,10 @@ python src/vol_surface.py       # smile, 3D surface, skew report
 
 # Capstone:
 python src/delta_hedging.py     # hedging error vs rebalance frequency
+
+# Full narrative (reads the saved snapshot; no network needed):
+jupyter notebook notebooks/analysis.ipynb
 ```
+
+The notebook `notebooks/analysis.ipynb` is committed **already executed** (outputs embedded), so it
+renders the full story — pricing agreement → real chain → smile → hedging — directly on GitHub.
